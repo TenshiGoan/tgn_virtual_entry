@@ -1,0 +1,46 @@
+export default function getSourceCode(headers: string[], body: string[]) {
+  headers.push(
+    `import "#internal/nitro/virtual/polyfill";`,
+    `import { Server } from "node:http";`,
+    `import { tmpdir } from "node:os";`,
+    `import { join } from "node:path";`,
+    `import { mkdirSync } from "node:fs";`,
+    `import { threadId, parentPort, BroadcastChannel } from "node:worker_threads";`,
+    `import { isWindows, provider } from "std-env";`,
+    `import { toNodeListener } from "h3";`,
+    ``,
+    `//@ts-ignore`,
+    `import { nitroApp } from "#internal/nitro/app";`
+  );
+  body.push(
+    `const server = new Server(toNodeListener(nitroApp.h3App));`,
+    ``,
+    `const bc = new BroadcastChannel('socket.io');`,
+    `server.listen(0, () => {`,
+    `  const _address = server.address();`,
+    `  const event = "listen";`,
+    `  const address = typeof _address === "string"`,
+    `                    ? { socketPath: _address }`,
+    `                    : { host: "localhost", port: _address?.port };`,
+    `  parentPort?.postMessage({ event, address });`,
+    `  bc?.postMessage({ event, address });`,
+    `});`,
+    ``,
+    `if (process.env.DEBUG) {`,
+    `  process.on("unhandledRejection", (err) =>`,
+    `    console.error("[nitro] [dev] [unhandledRejection]", err)`,
+    `  );`,
+    `  process.on("uncaughtException", (err) =>`,
+    `    console.error("[nitro] [dev] [uncaughtException]", err)`,
+    `  );`,
+    `} else {`,
+    `  process.on("unhandledRejection", (err) =>`,
+    `    console.error("[nitro] [dev] [unhandledRejection] " + err)`,
+    `  );`,
+    `  process.on("uncaughtException", (err) =>`,
+    `    console.error("[nitro] [dev] [uncaughtException] " + err)`,
+    `  );`,
+    `}`,
+    ``
+  );
+}
